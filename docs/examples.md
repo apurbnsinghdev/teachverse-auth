@@ -1,3 +1,6 @@
+### 2. New `docs/examples.md` (Extracted from your README)
+*Copy this content to `docs/examples.md`. This is much easier for a developer to scan.*
+
 ```markdown
 # Real-World Examples
 

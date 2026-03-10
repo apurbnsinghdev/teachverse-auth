@@ -1,5 +1,4 @@
-# API Documentation
-
+### 1. API Documentation `docs/api.md`
 ## Security & Permissions System
 Our API uses a **Dependency Factory Pattern** for granular access control.
 

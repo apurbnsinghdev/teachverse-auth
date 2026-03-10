@@ -20,11 +20,11 @@ pytest tests/ -v
 We follow a "Security-First" development approach.
 
 1. New Features
-Keep it modular: New features should live in src/teachverse_auth/.
+ - Keep it modular: New features should live in src/teachverse_auth/.
 
-Add Tests: Every new feature or fix must include a corresponding test in the tests/ directory.
+- Add Tests: Every new feature or fix must include a corresponding test in the tests/ directory.
 
-Update CLI: If your feature impacts setup or initialization, update src/teachverse_auth/cli.py and the corresponding tests.
+- Update CLI: If your feature impacts setup or initialization, update src/teachverse_auth/cli.py and the corresponding tests.
 
 2. Testing
 Before submitting a Pull Request, ensure your code passes all checks:
@@ -37,17 +37,17 @@ Check Coverage:
 pytest --cov=teachverse_auth tests/
 ```
 3. Pull Request Process
-Branching: Use descriptive branch names (e.g., feature/redis-caching, fix/permission-resolution).
+- Branching: Use descriptive branch names (e.g., feature/redis-caching, fix/permission-resolution).
 
-Documentation: If you add a new API endpoint or dependency, update the relevant file in docs/.
+- Documentation: If you add a new API endpoint or dependency, update the relevant file in docs/.
 
-Review: All PRs must pass the CI pipeline (if configured) and be reviewed by at least one maintainer.
+- Review: All PRs must pass the CI pipeline (if configured) and be reviewed by at least one maintainer.
 
 🛡 Security
-This is an authentication/authorization package. Security is our top priority.
+- This is an authentication/authorization package. Security is our top priority.
 
-Never hardcode secrets. Use environment variables.
+- Never hardcode secrets. Use environment variables.
 
-Ensure any changes to the PermissionResolver or PermissionChecker are heavily unit-tested.
+- Ensure any changes to the PermissionResolver or PermissionChecker are heavily unit-tested.
 
-If you find a security vulnerability, please report it via private communication rather than creating a public issue.
+- If you find a security vulnerability, please report it via private communication rather than creating a public issue.

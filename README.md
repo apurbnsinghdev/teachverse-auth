@@ -14,3 +14,24 @@ pip install teachverse-auth
 teachverse-auth setup   # Interactive wizard to create .env
 teachverse-auth migrate # Initialize DB
 teachverse-auth runserver
+```
+## 🗝️ Key Features
+Granular RBAC: service:resource_type:resource_id:action format.
+
+Hierarchical Inheritance: Automatic wildcard (*) resolution.
+
+Developer Experience: Intuitive FastAPI Depends injection.
+
+Microservice Ready: Built-in service discovery and multi-tenancy.
+
+Read the full documentation at [docs](docs/examples.md)
+
+---
+
+# Architecture: TeachVerse Auth
+
+[Architecture](./docs/architecture.md)
+
+# API Documentation
+
+[API Guide](./docs/api.md)
