@@ -1,6 +1,6 @@
 # teachverse_auth/core/config.py
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from typing import Optional, Dict, Any, ClassVar
 import os
 from pathlib import Path
@@ -9,6 +9,13 @@ from datetime import datetime
 
 class Settings(BaseSettings):
     """Application settings - auto-creates .env on first run"""
+
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="allow"
+    )
     
     APP_NAME: str = "TEACHVERSE Auth"
     API_PREFIX: str = "/api/v1"
@@ -24,11 +31,6 @@ class Settings(BaseSettings):
     extra_config: Dict[str, Any] = Field(default={})
     _loaded_services: ClassVar[set] = set()
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-        extra = "allow"
     
     def __init__(self, **kwargs):
         env_path = Path(".env")

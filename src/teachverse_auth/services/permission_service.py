@@ -11,8 +11,14 @@ from ..models.permission import Permission, ServiceRegistry
 class PermissionService:
     """Service for hierarchical permission checking like AWS IAM"""
     
+    # Define what actions are included in "manage"
     MANAGE_ACTIONS = ["create", "read", "update", "delete", "list", "publish", "archive", "restore"]
     
+    # Define what actions are included in "process" (for payments)
+    PROCESS_ACTIONS = [
+        "process", "refund", "payout", "invoice"
+    ]
+
     @classmethod
     async def check_permission(
         cls,

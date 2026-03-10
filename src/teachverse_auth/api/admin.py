@@ -4,19 +4,19 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 
 from ..core.database import get_db
-from ..core.security import SecurityUtils
-from ..dependencies.auth import require_permission, get_current_user, TokenData
+from ..core.security import generate_secure_key, get_password_hash
+from ..dependencies.auth import PermissionChecker, get_current_user, TokenData
 from ..models.user import User, UserRole
 from ..models.permission import Permission, ServiceRegistry
 from ..models.role import Role
 from ..services.permission_service import PermissionService
-from ..exceptions import UserNotFoundError
+from ..core.exceptions import UserNotFoundError
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 @router.get("/stats")
 async def get_admin_stats(
-    current_user: TokenData = Depends(require_permission("system", "stats", "read")),
+    _: TokenData = Depends(PermissionChecker("system", "stats", "read")),
     db: Session = Depends(get_db)
 ):
     """Get platform statistics"""
@@ -45,7 +45,7 @@ async def list_all_users(
     skip: int = 0,
     limit: int = 100,
     role: Optional[str] = None,
-    current_user: TokenData = Depends(require_permission("user", "user", "list")),
+    current_user: TokenData = Depends(PermissionChecker("user", "user", "list")),
     db: Session = Depends(get_db)
 ):
     """List all users with optional filters"""
@@ -59,7 +59,7 @@ async def list_all_users(
 @router.post("/users/{user_id}/reset-password")
 async def reset_user_password(
     user_id: int,
-    current_user: TokenData = Depends(require_permission("user", "user", "update")),
+    current_user: TokenData = Depends(PermissionChecker("user", "user", "update")),
     db: Session = Depends(get_db)
 ):
     """Reset user password (admin only)"""
@@ -68,8 +68,8 @@ async def reset_user_password(
         raise UserNotFoundError()
     
     # Generate temporary password
-    temp_password = SecurityUtils.generate_secure_key(12)
-    user.password_hash = SecurityUtils.get_password_hash(temp_password)
+    temp_password = generate_secure_key(12)
+    user.password_hash = get_password_hash(temp_password)
     db.add(user)
     db.commit()
     
@@ -79,7 +79,7 @@ async def reset_user_password(
 async def suspend_user(
     user_id: int,
     reason: str = None,
-    current_user: TokenData = Depends(require_permission("user", "user", "suspend")),
+    current_user: TokenData = Depends(PermissionChecker("user", "user", "suspend")),
     db: Session = Depends(get_db)
 ):
     """Suspend a user account"""
@@ -100,7 +100,7 @@ async def suspend_user(
 @router.post("/users/{user_id}/activate")
 async def activate_user(
     user_id: int,
-    current_user: TokenData = Depends(require_permission("user", "user", "activate")),
+    current_user: TokenData = Depends(PermissionChecker("user", "user", "activate")),
     db: Session = Depends(get_db)
 ):
     """Activate a suspended user"""
@@ -122,7 +122,7 @@ async def get_audit_logs(
     skip: int = 0,
     limit: int = 100,
     user_id: Optional[int] = None,
-    current_user: TokenData = Depends(require_permission("system", "audit", "read")),
+    current_user: TokenData = Depends(PermissionChecker("system", "audit", "read")),
     db: Session = Depends(get_db)
 ):
     """Get audit logs (requires audit permission)"""
@@ -131,7 +131,7 @@ async def get_audit_logs(
 
 @router.get("/health/services")
 async def check_services_health(
-    current_user: TokenData = Depends(require_permission("system", "health", "read")),
+    current_user: TokenData = Depends(PermissionChecker("system", "health", "read")),
     db: Session = Depends(get_db)
 ):
     """Check health of all registered services"""

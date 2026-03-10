@@ -15,7 +15,8 @@ from .core.config import settings
 def create_app() -> FastAPI:
     """Application factory"""
     app = FastAPI(
-        title="TEACHVERSE Auth Service",
+        title="TeachVerse Auth API",
+        description="Enterprise-grade authentication and authorization service.",
         version="0.1.0",
         docs_url="/api/docs",
         redoc_url="/api/redoc",

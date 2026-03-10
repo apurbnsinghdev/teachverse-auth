@@ -4,8 +4,10 @@ from sqlmodel import Session, select
 
 from ..models.permission import Permission, ServiceRegistry, ResourceInstance
 from ..services.permission_service import PermissionService
-from ..dependencies.auth import require_permission, get_current_user, TokenData
+from ..dependencies.auth import PermissionChecker, get_current_user, TokenData
 from ..core.database import get_db
+from pydantic import BaseModel
+from datetime import datetime
 
 router = APIRouter(prefix="/api/v1/permissions", tags=["permissions"])
 
@@ -25,21 +27,17 @@ class PermissionResponse(BaseModel):
     action: str
     description: Optional[str]
     is_system: bool
+    created_at: datetime
 
-@router.post("", response_model=PermissionResponse)
+# This file defines API endpoints for managing permissions and services, as well as checking permissions for users. It uses the PermissionService for the underlying logic and interacts with the database to store and retrieve permissions and service registry information.
+@router.post("/", response_model=PermissionResponse)
 async def create_permission(
     permission_data: PermissionCreate,
-    current_user = Depends(require_permission("auth", "permission", "create")),
+    current_user: TokenData = Depends(PermissionChecker("auth", "permission", "create")),
     db: Session = Depends(get_db)
 ):
     """
     Create a hierarchical permission like AWS IAM.
-    
-    Examples:
-        - Read any course: 
-          {"service": "course", "resource_type": "course", "resource_id": "*", "action": "read"}
-        - Update specific course:
-          {"service": "course", "resource_type": "course", "resource_id": "123", "action": "update"}
     """
     # Validate service exists
     service = db.exec(
@@ -64,6 +62,22 @@ async def create_permission(
         raise HTTPException(
             status_code=400,
             detail=f"Invalid action. Valid: {service.available_actions}"
+        )
+    
+    # Check if permission already exists
+    existing = db.exec(
+        select(Permission).where(
+            Permission.service == permission_data.service,
+            Permission.resource_type == permission_data.resource_type,
+            Permission.resource_id == permission_data.resource_id,
+            Permission.action == permission_data.action
+        )
+    ).first()
+    
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="Permission already exists"
         )
     
     # Create permission
@@ -115,31 +129,9 @@ async def get_my_permissions(
     
     return {"permissions": list(permissions)}
 
-@router.post("/services/register")
-async def register_service(
-    service_name: str = Body(...),
-    display_name: str = Body(...),
-    resource_types: List[str] = Body(...),
-    actions: List[str] = Body(...),
-    base_url: Optional[str] = Body(None),
-    current_user = Depends(require_permission("auth", "service", "register")),
-    db: Session = Depends(get_db)
-):
-    """Register a new service (called by microservices)"""
-    registry = await PermissionService.register_service(
-        db=db,
-        service_name=service_name,
-        display_name=display_name,
-        resource_types=resource_types,
-        actions=actions,
-        base_url=base_url
-    )
-    
-    return registry
-
 @router.get("/services", response_model=List[ServiceRegistry])
 async def list_services(
-    current_user = Depends(require_permission("auth", "service", "list")),
+    current_user: TokenData = PermissionChecker("auth", "service", "list"), 
     db: Session = Depends(get_db)
 ):
     """List all registered services"""

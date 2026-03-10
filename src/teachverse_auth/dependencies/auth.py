@@ -1,11 +1,12 @@
 # teachverse_auth/dependencies/auth.py
-from typing import Optional, List
+from typing import Optional, List, Callable
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from sqlmodel import Session, select
 from datetime import datetime
 import jwt
 from jwt.exceptions import InvalidTokenError
+from pydantic import BaseModel, ValidationError
 
 from ..core.database import get_db
 from ..core.config import settings
@@ -65,7 +66,7 @@ async def get_oauth2_scheme_dependency(
         oauth2_scheme = init_oauth2(db)
     return oauth2_scheme
 
-class TokenData:
+class TokenData(BaseModel):
     def __init__(self, sub: str, scopes: List[str] = None, user_data: dict = None):
         self.sub = sub
         self.scopes = scopes or []
@@ -123,7 +124,7 @@ async def get_current_user(
             }
         )
         
-    except InvalidTokenError:
+    except (InvalidTokenError, ValidationError):
         raise credentials_exception
     
     user = db.get(User, int(user_id))
@@ -143,6 +144,7 @@ async def get_current_user(
     
     return token_data
 
+# Optional authentication dependency - returns None if no valid token
 async def get_optional_user(
     request: Request,
     db: Session = Depends(get_db)
@@ -174,11 +176,39 @@ async def get_optional_user(
     except (InvalidTokenError, Exception):
         return None
 
-def require_permission(service: str, resource_type: str, action: str):
-    """Require specific permission on any resource"""
-    async def dependency(
+class PermissionChecker:
+    def __init__(self, service: str, resource_type: str, action: str):
+        self.service = service
+        self.resource_type = resource_type
+        self.action = action
+
+    async def __call__(
+        self, 
         current_user: TokenData = Depends(get_current_user),
         db: Session = Depends(get_db)
+    ):
+        has_perm = await PermissionService.check_permission(
+            db=db,
+            user_id=int(current_user.sub),
+            service=self.service,
+            resource_type=self.resource_type,
+            resource_id="*",
+            action=self.action
+        )
+        if not has_perm:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Missing permission: {self.service}:{self.resource_type}:*:{self.action}"
+            )
+        return current_user
+    
+# Dependency functions for permission checks
+async def require_permission(service: str, resource_type: str, action: str):
+    """This is a FACTORY function - it returns a Depends object.
+    Require specific permission on any resource - returns a Depends object"""
+    async def _permission_dependency(
+        current_user: TokenData = Depends(get_current_user), # Inner dependency
+        db: Session = Depends(get_db)  # Inner dependency
     ):
         has_perm = await PermissionService.check_permission(
             db=db,
@@ -194,11 +224,12 @@ def require_permission(service: str, resource_type: str, action: str):
                 detail=f"Missing permission: {service}:{resource_type}:*:{action}"
             )
         return current_user
-    return Depends(dependency)
+    # The key part - returning Depends() of the inner function
+    return Depends(_permission_dependency)
 
-def require_resource_permission(service: str, resource_type: str, resource_id: str, action: str):
-    """Require permission on a specific resource"""
-    async def dependency(
+async def require_resource_permission(service: str, resource_type: str, resource_id: str, action: str):
+    """Require permission on a specific resource - returns a Depends object"""
+    async def _resource_dependency(
         current_user: TokenData = Depends(get_current_user),
         db: Session = Depends(get_db)
     ):
@@ -216,11 +247,11 @@ def require_resource_permission(service: str, resource_type: str, resource_id: s
                 detail=f"Missing permission on resource: {resource_id}"
             )
         return current_user
-    return Depends(dependency)
+    return Depends(_resource_dependency)
 
-def require_role(required_role: str):
-    """Require specific role"""
-    async def dependency(
+async def require_role(required_role: str):
+    """Require specific role - returns a Depends object"""
+    async def _role_dependency(
         current_user: TokenData = Depends(get_current_user)
     ):
         if current_user.user_data.get("role") != required_role:
@@ -229,4 +260,16 @@ def require_role(required_role: str):
                 detail=f"Required role: {required_role}"
             )
         return current_user
-    return Depends(dependency)
+    return Depends(_role_dependency)
+
+
+__all__ = [
+    "get_oauth2_scheme_dependency",
+    "init_oauth2",
+    "get_current_user",
+    "get_optional_user",
+    "require_permission",
+    "require_resource_permission",
+    "require_role",
+    "TokenData",
+]

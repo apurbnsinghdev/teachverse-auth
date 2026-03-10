@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=82.0.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "teachverse-auth"
+version = "0.1.0"
+description = "Production-grade RBAC & OAuth2 solution for FastAPI microservices."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Apurba Singh", email = "apurbansinghdev@gmail.com"}
+]
+keywords = ["fastapi", "auth", "rbac", "oauth2", "jwt", "microservices"]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Framework :: FastAPI",
+    "Topic :: Security",
+]
+
+# These replace your requirements.txt
+dependencies = [
+    "fastapi>=0.135.1",
+    "uvicorn[standard]>=0.41.0",
+    "pyjwt[crypto]>=2.11.0",
+    "pwdlib[argon2]>=0.3.0",
+    "sqlmodel>=0.0.37",
+    "python-multipart>=0.0.22",
+    "pydantic>=2.12.0",
+    "pydantic-settings>=2.13.1",
+    "sqlalchemy>=2.0.48",
+    "psycopg2-binary>=2.9.9",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.2.2",
+    "email-validator>=2.3.0",
+    "typer>=0.24.1",
+    "alembic>=1.18.4",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=9.0.2",
+    "httpx>=0.28.1",
+    "pytest-asyncio>=1.3.0",
+    "anyio>=4.12.1",
+    "pytest-cov>=7.0.0"
+]
+
+# This creates a 'teachverse-auth' command in your terminal
+[project.scripts]
+teachverse-auth = "teachverse_auth.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

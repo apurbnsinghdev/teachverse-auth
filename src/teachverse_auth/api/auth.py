@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 from datetime import timedelta, datetime
-
+import jwt
 from ..core.database import get_db
 from ..core.config import settings
 from ..core.security import (
@@ -16,7 +16,7 @@ from ..core.security import (
 from ..models.user import User
 from ..models.permission import ServiceRegistry
 from ..services.permission_service import PermissionService
-from ..dependencies.auth import get_oauth2_scheme_dependency
+from ..dependencies.auth import get_oauth2_scheme_dependency, get_current_user
 
 router = APIRouter(prefix=f"{settings.API_PREFIX}/auth", tags=["authentication"])
 
